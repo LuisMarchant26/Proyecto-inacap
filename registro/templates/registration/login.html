@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subcontractor App - Login</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #121212; /* Fondo Negro */
+            color: #ffffff;            /* Texto Blanco OBLIGATORIO */
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        .login-card {
+            background-color: #1e1e1e; /* Gris oscuro para la tarjeta */
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            border: 1px solid #333;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background-color: #2c2c2c;
+            border: 1px solid #444;
+            color: white;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        
+        h1 { margin-top: 0; color: #007bff; }
+        p { color: #aaa; }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#007bff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+
+        <h1>Subcontractor App</h1>
+        <p>Inicia sesión para continuar</p>
+
+        <form method="post">
+            {% csrf_token %}
+            
+            <div style="text-align: left; margin-bottom: 5px;">Usuario:</div>
+            <input type="text" name="username" placeholder="Ej: admin o 12345678-9" required autofocus>
+            
+            <div style="text-align: left; margin-bottom: 5px; margin-top: 15px;">Contraseña:</div>
+            <input type="password" name="password" placeholder="********" required>
+            
+            <button type="submit">INGRESAR</button>
+        </form>
+    </div>
+
+</body>
+</html>

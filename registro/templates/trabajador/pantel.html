@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Asistencia</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; text-align: center; background-color: #f4f4f9; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        button { width: 100%; padding: 15px; font-size: 18px; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px; }
+        .btn-entrada { background-color: #28a745; }
+        .btn-salida { background-color: #dc3545; }
+        select, input[type="file"] { width: 100%; padding: 10px; margin: 10px 0; }
+        .alert { padding: 10px; margin-bottom: 15px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>👷 Hola, {{ user.first_name }}</h2>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert {% if message.tags == 'success' %}success{% else %}error{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="POST" enctype="multipart/form-data" id="asistenciaForm">
+        {% csrf_token %}
+        
+        <input type="hidden" name="latitud" id="lat">
+        <input type="hidden" name="longitud" id="lon">
+
+        {% if asistencia_activa %}
+            <h3>Estás trabajando en: <strong>{{ asistencia_activa.obra.nombre }}</strong></h3>
+            <p>Entrada marcada a las: {{ asistencia_activa.hora_entrada }}</p>
+            
+            <label>📸 Foto de Salida (Opcional):</label>
+            <input type="file" name="foto" accept="image/*" capture="camera">
+            
+            <button type="submit" name="marcar_salida" class="btn-salida" onclick="obtenerUbicacion()">
+                🛑 MARCAR SALIDA
+            </button>
+        {% else %}
+            <label>📍 Selecciona la Obra:</label>
+            <select name="obra_id" required>
+                {% for obra in obras %}
+                    <option value="{{ obra.id }}">{{ obra.nombre }}</option>
+                {% endfor %}
+            </select>
+
+            <label>📸 Foto de Entrada (Selfie/EPP):</label>
+            <input type="file" name="foto" accept="image/*" capture="camera" required>
+
+            <button type="submit" name="marcar_entrada" class="btn-entrada" onclick="obtenerUbicacion()">
+                ✅ MARCAR ENTRADA
+            </button>
+        {% endif %}
+    </form>
+    
+    <p id="statusGPS" style="font-size: 12px; color: gray; margin-top: 10px;">Esperando GPS...</p>
+</div>
+
+<script>
+    // Script para obtener GPS automáticamente al cargar y al hacer click
+    function obtenerUbicacion() {
+        const status = document.getElementById('statusGPS');
+        
+        if (!navigator.geolocation) {
+            status.textContent = "Tu navegador no soporta GPS";
+            return;
+        }
+
+        status.textContent = "📍 Localizando...";
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                document.getElementById('lat').value = position.coords.latitude;
+                document.getElementById('lon').value = position.coords.longitude;
+                status.textContent = "✅ Ubicación obtenida: " + position.coords.latitude.toFixed(4);
+            },
+            (error) => {
+                status.textContent = "❌ Error al obtener GPS. Activa la ubicación.";
+                alert("Debes permitir el acceso a tu ubicación para marcar asistencia.");
+            },
+            { enableHighAccuracy: true } // Importante para que sea preciso en obras
+        );
+    }
+
+    // Intentamos obtener la ubicación apenas carga la página
+    window.onload = obtenerUbicacion;
+</script>
+
+</body>
+</html>
