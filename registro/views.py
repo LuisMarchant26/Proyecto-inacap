@@ -4,6 +4,16 @@ from django.utils import timezone
 from django.contrib import messages
 from .models import Asistencia, Obra, Perfil
 from .decorators import solo_trabajadores
+import uuid  # <--- IMPORTANTE: Para generar el ID único del celular
+
+# --- FUNCIÓN AUXILIAR PARA OBTENER LA IP REAL ---
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
 
 # 1. EL DIRECTOR DE TRÁFICO (Home)
 @login_required
@@ -19,11 +29,40 @@ def home(request):
     except:
         return redirect('/admin/')
 
-# 2. VISTA DEL TRABAJADOR (La App Móvil)
+# 2. VISTA DEL TRABAJADOR (Con Seguridad Anti-Fraude)
 @login_required
 @solo_trabajadores
 def panel_trabajador(request):
     perfil = request.user.perfil
+    
+    # --- INICIO: BLOQUEO DE DISPOSITIVO (DEVICE BINDING) ---
+    cookie_device = request.COOKIES.get('dispositivo_seguro')
+    
+    # CASO A: El trabajador NUNCA ha registrado un celular. Lo vinculamos ahora.
+    if not perfil.dispositivo_id:
+        if not cookie_device:
+            # Generamos una huella nueva
+            nuevo_id = str(uuid.uuid4())
+            perfil.dispositivo_id = nuevo_id
+            perfil.save()
+            
+            # Recargamos la página para guardar la cookie en el navegador
+            response = redirect('panel_trabajador')
+            # La cookie dura 1 año (365 días)
+            response.set_cookie('dispositivo_seguro', nuevo_id, max_age=31536000)
+            messages.info(request, "✅ Celular vinculado exitosamente a tu cuenta.")
+            return response
+            
+    # CASO B: Ya tiene un celular registrado. Verificamos si es ESTE.
+    else:
+        if cookie_device != perfil.dispositivo_id:
+            # ¡ALERTA! Intento de acceso desde otro celular (o navegador diferente)
+            messages.error(request, "⛔ ERROR DE SEGURIDAD: Esta cuenta está vinculada a otro dispositivo.")
+            # Renderizamos la pantalla de bloqueo (debes crear este HTML)
+            return render(request, 'registration/bloqueo_seguridad.html')
+
+    # --- FIN SEGURIDAD ---
+
     hoy = timezone.now().date()
     
     asistencia_activa = Asistencia.objects.filter(
@@ -36,6 +75,9 @@ def panel_trabajador(request):
         lat = request.POST.get('latitud')
         lon = request.POST.get('longitud')
         foto = request.FILES.get('foto')
+        
+        # Capturamos la IP para auditoría
+        ip_cliente = get_client_ip(request)
 
         if not lat or not lon:
             messages.error(request, "Error: No se pudo obtener tu ubicación GPS.")
@@ -50,7 +92,8 @@ def panel_trabajador(request):
                 obra=obra,
                 latitud_entrada=lat,
                 longitud_entrada=lon,
-                foto_entrada=foto
+                foto_entrada=foto,
+                ip_registro=ip_cliente  # <--- Guardamos la IP aquí
             )
             messages.success(request, "¡Entrada marcada exitosamente!")
 
@@ -84,23 +127,18 @@ def dashboard_jefe_obra(request):
     if perfil.rol != 'JEFE':
         return redirect('home') 
     
-    # 1. Obtenemos TODAS las obras activas asignadas a este jefe
     mis_obras = Obra.objects.filter(jefe_obra=perfil, activa=True)
     
     if not mis_obras.exists():
-        return render(request, 'registro/error_no_obra.html')
+        return render(request, 'registration/error_no_obra.html')
 
-    # 2. Lógica de Selección: ¿El usuario eligió una obra específica en el menú?
     obra_id = request.GET.get('obra_id')
     
     if obra_id:
-        # Intentamos obtener esa obra específica, validando que sea suya
         obra_actual = get_object_or_404(Obra, id=obra_id, jefe_obra=perfil)
     else:
-        # Si no eligió ninguna, mostramos la primera por defecto
         obra_actual = mis_obras.first()
 
-    # 3. Calculamos los datos SOLO para la obra seleccionada ('obra_actual')
     hoy = timezone.now().date()
     asistencias_hoy = Asistencia.objects.filter(obra=obra_actual, fecha=hoy).order_by('-hora_entrada')
     
@@ -108,8 +146,8 @@ def dashboard_jefe_obra(request):
     alertas_gps = asistencias_hoy.filter(entrada_valida=False).count()
     
     context = {
-        'obra': obra_actual,      # La obra activa en la vista
-        'mis_obras': mis_obras,   # La lista para el menú desplegable
+        'obra': obra_actual,
+        'mis_obras': mis_obras,
         'asistencias_hoy': asistencias_hoy,
         'presentes': presentes,
         'alertas_gps': alertas_gps,

@@ -1,83 +1,135 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subcontractor App - Login</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <title>Subcontractor App - Acceso</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
     <style>
         body {
-            font-family: sans-serif;
-            background-color: #121212; /* Fondo Negro */
-            color: #ffffff;            /* Texto Blanco OBLIGATORIO */
-            margin: 0;
+            background-color: #121212; /* Tu negro profundo original */
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            min-height: 100vh;
+            margin: 0;
         }
 
         .login-card {
-            background-color: #1e1e1e; /* Gris oscuro para la tarjeta */
-            padding: 30px;
-            border-radius: 15px;
-            width: 90%;
-            max-width: 400px;
-            text-align: center;
+            background-color: #1e1e1e; /* Gris oscuro material design */
             border: 1px solid #333;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); /* Sombra suave */
+            max-width: 400px;
+            width: 100%;
         }
 
-        input {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
+        .app-icon {
+            font-size: 3.5rem;
+            color: #0d6efd; /* Azul Bootstrap */
+            background: rgba(13, 110, 253, 0.1);
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+        }
+
+        .form-control {
             background-color: #2c2c2c;
-            border: 1px solid #444;
-            color: white;
-            border-radius: 5px;
-            box-sizing: border-box;
-        }
-
-        button {
-            width: 100%;
+            border-color: #444;
             padding: 12px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            margin-top: 15px;
         }
         
-        h1 { margin-top: 0; color: #007bff; }
-        p { color: #aaa; }
+        .form-control:focus {
+            background-color: #333;
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+
+        .input-group-text {
+            background-color: #252525;
+            border-color: #444;
+            color: #aaa;
+        }
+
+        .btn-primary {
+            padding: 12px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            border-radius: 10px;
+        }
     </style>
 </head>
 <body>
 
-    <div class="login-card">
-        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#007bff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-            <polyline points="9 22 9 12 15 12 15 22"></polyline>
-        </svg>
+    <div class="container px-4">
+        <div class="card login-card p-4 mx-auto">
+            <div class="card-body">
+                
+                <div class="text-center">
+                    <div class="app-icon">
+                        <i class="bi bi-buildings-fill"></i>
+                    </div>
+                    <h3 class="fw-bold text-white mb-1">Subcontractor App</h3>
+                    <p class="text-secondary mb-4">Portal de Gestión de Obras</p>
+                </div>
 
-        <h1>Subcontractor App</h1>
-        <p>Inicia sesión para continuar</p>
+                {% if form.errors %}
+                    <div class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill flex-shrink-0 me-2"></i>
+                        <div>
+                            <strong>Acceso Denegado</strong><br>
+                            <small>Usuario o contraseña incorrectos.</small>
+                        </div>
+                    </div>
+                {% endif %}
 
-        <form method="post">
-            {% csrf_token %}
-            
-            <div style="text-align: left; margin-bottom: 5px;">Usuario:</div>
-            <input type="text" name="username" placeholder="Ej: admin o 12345678-9" required autofocus>
-            
-            <div style="text-align: left; margin-bottom: 5px; margin-top: 15px;">Contraseña:</div>
-            <input type="password" name="password" placeholder="********" required>
-            
-            <button type="submit">INGRESAR</button>
-        </form>
+                {% if next %}
+                    {% if user.is_authenticated %}
+                        <div class="alert alert-warning text-center">No tienes permisos.</div>
+                    {% else %}
+                        <div class="alert alert-info text-center">Inicia sesión para continuar.</div>
+                    {% endif %}
+                {% endif %}
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small text-uppercase fw-bold">Usuario / RUT</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+                            <input type="text" name="username" class="form-control" placeholder="Ej: 12345678-9" required autofocus>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label text-secondary small text-uppercase fw-bold">Contraseña</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                            <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                        </div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary shadow">
+                            INGRESAR AL SISTEMA
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+            <div class="card-footer bg-transparent border-0 text-center text-secondary mt-2">
+                <small>© 2025 Gestión de Proyectos</small>
+            </div>
+        </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

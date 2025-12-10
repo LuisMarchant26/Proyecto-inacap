@@ -113,3 +113,9 @@ LOGIN_REDIRECT_URL = 'home'
 
 # 3. Al salir, los devuelve al login personalizado (NO al admin)
 LOGOUT_REDIRECT_URL = 'login'
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+    'https://proyecto-inacap.onrender.com',  
+]

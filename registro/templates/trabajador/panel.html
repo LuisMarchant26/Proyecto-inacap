@@ -2,129 +2,187 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control de Asistencia</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Portal Seguro del Trabajador</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    
     <style>
-        body { font-family: sans-serif; padding: 20px; text-align: center; background-color: #f4f4f9; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Roboto, sans-serif; }
+        .secure-card {
+            max-width: 450px;
+            margin: 15px auto;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            overflow: hidden;
+            border: none;
+        }
+        .header-secure {
+            background: linear-gradient(135deg, #198754, #146c43);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        .camera-trigger {
+            border: 3px dashed #ced4da;
+            background-color: #fff;
+            padding: 30px;
+            text-align: center;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .camera-trigger:active { background-color: #e9ecef; transform: scale(0.98); }
+        .camera-trigger.captured { border-color: #198754; background-color: #f0fff4; }
         
-        /* Estilos de botones */
-        button { width: 100%; padding: 15px; font-size: 16px; font-weight: bold; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px; transition: background 0.3s; }
-        .btn-entrada { background-color: #28a745; }
-        .btn-entrada:hover { background-color: #218838; }
-        .btn-salida { background-color: #dc3545; }
-        .btn-salida:hover { background-color: #c82333; }
-        .btn-logout { background-color: #6c757d; margin-top: 20px; font-size: 14px; padding: 12px; }
-        .btn-logout:hover { background-color: #5a6268; }
-
-        /* Inputs y Selects */
-        select, input[type="file"] { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        /* Ocultar input real */
+        #fotoInput { display: none; }
         
-        /* Alertas */
-        .alert { padding: 15px; margin-bottom: 20px; border-radius: 8px; font-size: 14px; }
-        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        
-        /* Estado Activo */
-        .status-box { background-color: #e8f5e9; border: 2px solid #4caf50; color: #2e7d32; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: left; }
+        /* Indicador de IP */
+        .security-badge { font-size: 0.75rem; background: #e9ecef; padding: 5px 10px; border-radius: 20px; color: #666; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <div style="text-align: left; margin-bottom: 20px;">
-        <small style="color: #888;">Bienvenido/a,</small>
-        <h2 style="margin: 0; color: #333;">{{ user.first_name }} {{ user.last_name }}</h2>
-    </div>
-    
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert {% if message.tags == 'success' %}success{% else %}error{% endif %}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-
-    <form method="POST" enctype="multipart/form-data" id="asistenciaForm">
-        {% csrf_token %}
+<div class="container pb-5">
+    <div class="card secure-card">
         
-        <input type="hidden" name="latitud" id="lat">
-        <input type="hidden" name="longitud" id="lon">
+        <div class="header-secure">
+            <div class="mb-2"><i class="bi bi-shield-lock-fill" style="font-size: 2rem;"></i></div>
+            <h5 class="fw-bold mb-0">Registro Biométrico</h5>
+            <small class="opacity-75">{{ user.first_name }} {{ user.last_name }}</small>
+        </div>
 
-        {% if asistencia_activa %}
-            <div class="status-box">
-                <div style="font-size: 1.2em; font-weight: bold; margin-bottom: 5px;">✅ ¡Estás Trabajando!</div>
-                <div>🏢 <strong>Obra:</strong> {{ asistencia_activa.obra.nombre }}</div>
-                <div>🕒 <strong>Entrada:</strong> {{ asistencia_activa.hora_entrada|time:"H:i" }}</div>
-                <div style="font-size: 0.9em; color: #666; margin-top: 5px;">Recuerda marcar salida al terminar.</div>
-            </div>
+        <div class="card-body p-4">
             
-            <label style="display:block; text-align:left; font-weight:bold;">📸 Foto de Salida (Opcional):</label>
-            <input type="file" name="foto" accept="image/*" capture="camera">
-            
-            <button type="submit" name="marcar_salida" class="btn-salida" onclick="obtenerUbicacion()">
-                🛑 MARCAR SALIDA
-            </button>
-        {% else %}
-            <div style="margin-bottom: 20px;">
-                <p style="color: #666;">Selecciona tu ubicación y sube tu foto para iniciar el turno.</p>
-            </div>
-
-            <label style="display:block; text-align:left; font-weight:bold;">📍 Selecciona la Obra:</label>
-            <select name="obra_id" required>
-                {% for obra in obras %}
-                    <option value="{{ obra.id }}">{{ obra.nombre }}</option>
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} shadow-sm border-0">{{ message }}</div>
                 {% endfor %}
-            </select>
+            {% endif %}
 
-            <label style="display:block; text-align:left; font-weight:bold;">📸 Foto de Entrada (Selfie/EPP):</label>
-            <input type="file" name="foto" accept="image/*" capture="camera" required>
+            <div class="d-flex justify-content-between mb-3">
+                <span class="security-badge"><i class="bi bi-globe"></i> IP: {{ request.META.REMOTE_ADDR }}</span>
+                <span class="security-badge" id="gps-badge"><i class="bi bi-geo-alt"></i> Buscando...</span>
+            </div>
 
-            <button type="submit" name="marcar_entrada" class="btn-entrada" onclick="obtenerUbicacion()">
-                ✅ MARCAR ENTRADA
-            </button>
-        {% endif %}
-    </form>
-    
-    <p id="statusGPS" style="font-size: 12px; color: gray; margin-top: 15px;">📡 Buscando señal GPS...</p>
+            <form method="POST" enctype="multipart/form-data" id="asistenciaForm">
+                {% csrf_token %}
+                <input type="hidden" name="latitud" id="lat">
+                <input type="hidden" name="longitud" id="lon">
 
-    <form action="{% url 'logout' %}" method="post">
-        {% csrf_token %}
-        <button type="submit" class="btn-logout">
-            🚪 Cerrar Sesión
-        </button>
-    </form>
+                {% if asistencia_activa %}
+                    <div class="alert alert-warning text-center border-0 shadow-sm mb-4">
+                        <strong>Turno en curso:</strong><br>{{ asistencia_activa.obra.nombre }}
+                    </div>
+
+                    <p class="fw-bold mb-2">Evidencia de Término</p>
+                    <div class="camera-trigger mb-3" onclick="document.getElementById('fotoInput').click()">
+                        <i class="bi bi-camera-fill text-danger display-4"></i>
+                        <p class="mb-0 mt-2 fw-bold text-muted" id="foto-text">Tocar para foto trasera</p>
+                    </div>
+                    <input type="file" name="foto" id="fotoInput" accept="image/*" capture="environment" onchange="fotoCapturada()">
+
+                    <button type="submit" name="marcar_salida" class="btn btn-danger w-100 py-3 fw-bold rounded-pill shadow" id="btnAction" disabled>
+                        FINALIZAR TURNO
+                    </button>
+
+                {% else %}
+                    <div class="mb-3">
+                        <label class="fw-bold mb-1">Ubicación de Trabajo</label>
+                        <select name="obra_id" class="form-select form-select-lg border-0 bg-light shadow-sm" required>
+                            {% for obra in obras %}
+                                <option value="{{ obra.id }}">{{ obra.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <p class="fw-bold mb-2">Verificación Visual</p>
+                    <div class="camera-trigger mb-4" onclick="document.getElementById('fotoInput').click()">
+                        <div id="icon-container">
+                            <i class="bi bi-person-bounding-box text-success display-4"></i>
+                        </div>
+                        <p class="mb-0 mt-2 fw-bold text-muted" id="foto-text">Tocar para Selfie en vivo</p>
+                    </div>
+                    
+                    <input type="file" name="foto" id="fotoInput" accept="image/*" capture="user" required onchange="fotoCapturada()">
+
+                    <button type="submit" name="marcar_entrada" class="btn btn-success w-100 py-3 fw-bold rounded-pill shadow" id="btnAction" disabled>
+                        REGISTRAR ENTRADA
+                    </button>
+                {% endif %}
+            </form>
+
+        </div>
+        <div class="card-footer bg-white border-0 text-center pb-3">
+            <form action="{% url 'logout' %}" method="post">
+                {% csrf_token %}
+                <button class="btn btn-link text-muted text-decoration-none btn-sm">Cerrar Sesión Segura</button>
+            </form>
+        </div>
+    </div>
 </div>
 
 <script>
-    function obtenerUbicacion() {
-        const status = document.getElementById('statusGPS');
-        
+    const btnAction = document.getElementById('btnAction');
+    const gpsBadge = document.getElementById('gps-badge');
+    let gpsListo = false;
+    let fotoLista = false;
+
+    function validarTodo() {
+        if (gpsListo && fotoLista) {
+            btnAction.disabled = false;
+        }
+    }
+
+    function fotoCapturada() {
+        const input = document.getElementById('fotoInput');
+        if (input.files && input.files[0]) {
+            fotoLista = true;
+            document.querySelector('.camera-trigger').classList.add('captured');
+            document.getElementById('foto-text').innerText = "Imagen cargada correctamente";
+            document.getElementById('foto-text').classList.add('text-success');
+            document.querySelector('.bi-person-bounding-box').classList.replace('bi-person-bounding-box', 'bi-check-circle-fill');
+            validarTodo();
+        }
+    }
+
+    function iniciarGPS() {
         if (!navigator.geolocation) {
-            status.textContent = "⚠️ Tu navegador no soporta GPS";
+            gpsBadge.innerText = "GPS no soportado";
+            gpsBadge.style.color = "red";
             return;
         }
 
-        status.textContent = "📍 Localizando...";
-
         navigator.geolocation.getCurrentPosition(
-            (position) => {
-                document.getElementById('lat').value = position.coords.latitude;
-                document.getElementById('lon').value = position.coords.longitude;
-                status.textContent = "✅ Ubicación GPS lista";
-                status.style.color = "green";
+            (pos) => {
+                document.getElementById('lat').value = pos.coords.latitude;
+                document.getElementById('lon').value = pos.coords.longitude;
+                
+                // Análisis básico de precisión
+                const precision = pos.coords.accuracy;
+                gpsBadge.innerHTML = `<i class="bi bi-geo-alt-fill"></i> Precisión: ${precision.toFixed(0)}m`;
+                
+                if(precision > 100) {
+                    gpsBadge.style.color = "orange"; // GPS muy vago
+                } else {
+                    gpsBadge.style.color = "green"; // GPS bueno
+                }
+                
+                gpsListo = true;
+                validarTodo();
             },
-            (error) => {
-                status.textContent = "❌ Error: Activa tu ubicación GPS";
-                status.style.color = "red";
-                // No bloqueamos con alert cada vez, solo mostramos el texto rojo
+            (err) => {
+                gpsBadge.innerText = "Error GPS";
+                gpsBadge.style.color = "red";
+                alert("Debes permitir el acceso a tu ubicación para marcar asistencia.");
             },
-            { enableHighAccuracy: true } 
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
     }
 
-    // Ejecutar al cargar
-    window.onload = obtenerUbicacion;
+    window.onload = iniciarGPS;
 </script>
 
 </body>
