@@ -1,0 +1,62 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+
+{% block result_list %}
+    
+    <div style="background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid #28a745;">
+        <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">
+            💰 <strong>Salud Financiera:</strong> Presupuesto vs Gastos
+        </h2>
+        <div style="height: 350px; width: 100%;">
+            <canvas id="graficoBalance"></canvas>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var ctx = document.getElementById('graficoBalance').getContext('2d');
+            var datos = {{ chart_data|safe }};
+
+            if (datos.length === 0) { return; }
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: datos.map(d => d.obra),
+                    datasets: [
+                        {
+                            label: 'Pérdidas (Improductivo)',
+                            data: datos.map(d => d.perdido),
+                            backgroundColor: 'rgba(220, 53, 69, 0.8)', // Rojo
+                        },
+                        {
+                            label: 'Sueldos Pagados',
+                            data: datos.map(d => d.sueldos),
+                            backgroundColor: 'rgba(255, 193, 7, 0.8)', // Amarillo
+                        },
+                        {
+                            label: 'Presupuesto Restante',
+                            data: datos.map(d => d.restante),
+                            backgroundColor: 'rgba(40, 167, 69, 0.8)', // Verde
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true }, // ESTO HACE QUE SE APILE
+                        y: { 
+                            stacked: true,
+                            beginAtZero: true,
+                            ticks: { callback: function(value) { return '$' + value.toLocaleString(); } }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+
+    {{ block.super }}
+{% endblock %}

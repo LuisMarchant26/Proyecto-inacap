@@ -5,21 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control de Asistencia</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; text-align: center; background-color: #f4f4f9; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        button { width: 100%; padding: 15px; font-size: 18px; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px; }
+        body { font-family: sans-serif; padding: 20px; text-align: center; background-color: #f4f4f9; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        
+        /* Estilos de botones */
+        button { width: 100%; padding: 15px; font-size: 16px; font-weight: bold; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px; transition: background 0.3s; }
         .btn-entrada { background-color: #28a745; }
+        .btn-entrada:hover { background-color: #218838; }
         .btn-salida { background-color: #dc3545; }
-        select, input[type="file"] { width: 100%; padding: 10px; margin: 10px 0; }
-        .alert { padding: 10px; margin-bottom: 15px; border-radius: 5px; }
-        .success { background-color: #d4edda; color: #155724; }
-        .error { background-color: #f8d7da; color: #721c24; }
+        .btn-salida:hover { background-color: #c82333; }
+        .btn-logout { background-color: #6c757d; margin-top: 20px; font-size: 14px; padding: 12px; }
+        .btn-logout:hover { background-color: #5a6268; }
+
+        /* Inputs y Selects */
+        select, input[type="file"] { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        
+        /* Alertas */
+        .alert { padding: 15px; margin-bottom: 20px; border-radius: 8px; font-size: 14px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        
+        /* Estado Activo */
+        .status-box { background-color: #e8f5e9; border: 2px solid #4caf50; color: #2e7d32; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: left; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>👷 Hola, {{ user.first_name }}</h2>
+    <div style="text-align: left; margin-bottom: 20px;">
+        <small style="color: #888;">Bienvenido/a,</small>
+        <h2 style="margin: 0; color: #333;">{{ user.first_name }} {{ user.last_name }}</h2>
+    </div>
     
     {% if messages %}
         {% for message in messages %}
@@ -36,24 +52,32 @@
         <input type="hidden" name="longitud" id="lon">
 
         {% if asistencia_activa %}
-            <h3>Estás trabajando en: <strong>{{ asistencia_activa.obra.nombre }}</strong></h3>
-            <p>Entrada marcada a las: {{ asistencia_activa.hora_entrada }}</p>
+            <div class="status-box">
+                <div style="font-size: 1.2em; font-weight: bold; margin-bottom: 5px;">✅ ¡Estás Trabajando!</div>
+                <div>🏢 <strong>Obra:</strong> {{ asistencia_activa.obra.nombre }}</div>
+                <div>🕒 <strong>Entrada:</strong> {{ asistencia_activa.hora_entrada|time:"H:i" }}</div>
+                <div style="font-size: 0.9em; color: #666; margin-top: 5px;">Recuerda marcar salida al terminar.</div>
+            </div>
             
-            <label>📸 Foto de Salida (Opcional):</label>
+            <label style="display:block; text-align:left; font-weight:bold;">📸 Foto de Salida (Opcional):</label>
             <input type="file" name="foto" accept="image/*" capture="camera">
             
             <button type="submit" name="marcar_salida" class="btn-salida" onclick="obtenerUbicacion()">
                 🛑 MARCAR SALIDA
             </button>
         {% else %}
-            <label>📍 Selecciona la Obra:</label>
+            <div style="margin-bottom: 20px;">
+                <p style="color: #666;">Selecciona tu ubicación y sube tu foto para iniciar el turno.</p>
+            </div>
+
+            <label style="display:block; text-align:left; font-weight:bold;">📍 Selecciona la Obra:</label>
             <select name="obra_id" required>
                 {% for obra in obras %}
                     <option value="{{ obra.id }}">{{ obra.nombre }}</option>
                 {% endfor %}
             </select>
 
-            <label>📸 Foto de Entrada (Selfie/EPP):</label>
+            <label style="display:block; text-align:left; font-weight:bold;">📸 Foto de Entrada (Selfie/EPP):</label>
             <input type="file" name="foto" accept="image/*" capture="camera" required>
 
             <button type="submit" name="marcar_entrada" class="btn-entrada" onclick="obtenerUbicacion()">
@@ -62,16 +86,22 @@
         {% endif %}
     </form>
     
-    <p id="statusGPS" style="font-size: 12px; color: gray; margin-top: 10px;">Esperando GPS...</p>
+    <p id="statusGPS" style="font-size: 12px; color: gray; margin-top: 15px;">📡 Buscando señal GPS...</p>
+
+    <form action="{% url 'logout' %}" method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn-logout">
+            🚪 Cerrar Sesión
+        </button>
+    </form>
 </div>
 
 <script>
-    // Script para obtener GPS automáticamente al cargar y al hacer click
     function obtenerUbicacion() {
         const status = document.getElementById('statusGPS');
         
         if (!navigator.geolocation) {
-            status.textContent = "Tu navegador no soporta GPS";
+            status.textContent = "⚠️ Tu navegador no soporta GPS";
             return;
         }
 
@@ -81,17 +111,19 @@
             (position) => {
                 document.getElementById('lat').value = position.coords.latitude;
                 document.getElementById('lon').value = position.coords.longitude;
-                status.textContent = "✅ Ubicación obtenida: " + position.coords.latitude.toFixed(4);
+                status.textContent = "✅ Ubicación GPS lista";
+                status.style.color = "green";
             },
             (error) => {
-                status.textContent = "❌ Error al obtener GPS. Activa la ubicación.";
-                alert("Debes permitir el acceso a tu ubicación para marcar asistencia.");
+                status.textContent = "❌ Error: Activa tu ubicación GPS";
+                status.style.color = "red";
+                // No bloqueamos con alert cada vez, solo mostramos el texto rojo
             },
-            { enableHighAccuracy: true } // Importante para que sea preciso en obras
+            { enableHighAccuracy: true } 
         );
     }
 
-    // Intentamos obtener la ubicación apenas carga la página
+    // Ejecutar al cargar
     window.onload = obtenerUbicacion;
 </script>
 

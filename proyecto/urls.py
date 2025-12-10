@@ -12,6 +12,9 @@ urlpatterns = [
     
     path('', views.home, name='home'),
     path('trabajador/', views.panel_trabajador, name='panel_trabajador'),
+    path('dashboard-jefe/', views.dashboard_jefe_obra, name='dashboard_jefe'),
+    path('v1/', include('registro.urls')), # Endpoint REST API
+    
 ]
 
 if settings.DEBUG:
