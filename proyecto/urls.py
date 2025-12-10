@@ -4,6 +4,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from registro import views
 
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     
@@ -14,6 +15,7 @@ urlpatterns = [
     path('trabajador/', views.panel_trabajador, name='panel_trabajador'),
     path('dashboard-jefe/', views.dashboard_jefe_obra, name='dashboard_jefe'),
     path('v1/', include('registro.urls')), # Endpoint REST API
+    path('jefe/reportar/', views.crear_reporte, name='crear_reporte'),
     
 ]
 

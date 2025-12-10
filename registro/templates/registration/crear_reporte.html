@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow-lg border-0 mt-4">
+            <div class="card-header bg-danger text-white py-3">
+                <h4 class="mb-0 fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Reportar Incidente</h4>
+                <small>Obra: {{ obra.nombre }}</small>
+            </div>
+            <div class="card-body p-4">
+                
+                <div class="alert alert-warning mb-4">
+                    <i class="bi bi-info-circle"></i>
+                    Este reporte calculará automáticamente el dinero perdido en sueldos y actualizará la proyección de quiebra.
+                </div>
+
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="fw-bold mb-1">Hora Inicio</label>
+                            {{ form.hora_inicio }}
+                        </div>
+                        <div class="col-6">
+                            <label class="fw-bold mb-1">Hora Fin</label>
+                            {{ form.hora_fin }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="fw-bold mb-1">Motivo / Descripción</label>
+                        {{ form.motivo }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="fw-bold mb-1">Impacto en Plazos (Días de Atraso)</label>
+                        {{ form.dias_retraso_obra }}
+                        <div class="form-text text-danger">Si esto genera multa, el sistema la sumará al presupuesto.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="fw-bold mb-1">Evidencia Fotográfica</label>
+                        {{ form.evidencia_foto }}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="fw-bold mb-1">Trabajadores Afectados (Detenidos)</label>
+                        {{ form.trabajadores_afectados }}
+                        <div class="form-text">Mantén presionada la tecla Ctrl (o Cmd) para seleccionar varios.</div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger btn-lg fw-bold shadow-sm">
+                            REGISTRAR PÉRDIDA
+                        </button>
+                        <a href="{% url 'dashboard_jefe' %}" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

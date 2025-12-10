@@ -2,8 +2,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.contrib import messages
-from .models import Asistencia, Obra, Perfil
+from .models import Asistencia, Obra, Perfil, ReporteImproductivo
 from .decorators import solo_trabajadores
+from .forms import ReporteIncidenteForm  # <--- NUEVO: Importamos el formulario
 import uuid  # <--- IMPORTANTE: Para generar el ID único del celular
 
 # --- FUNCIÓN AUXILIAR PARA OBTENER LA IP REAL ---
@@ -58,7 +59,7 @@ def panel_trabajador(request):
         if cookie_device != perfil.dispositivo_id:
             # ¡ALERTA! Intento de acceso desde otro celular (o navegador diferente)
             messages.error(request, "⛔ ERROR DE SEGURIDAD: Esta cuenta está vinculada a otro dispositivo.")
-            # Renderizamos la pantalla de bloqueo (debes crear este HTML)
+            # Renderizamos la pantalla de bloqueo (asegúrate de que existe este HTML)
             return render(request, 'registration/bloqueo_seguridad.html')
 
     # --- FIN SEGURIDAD ---
@@ -111,6 +112,7 @@ def panel_trabajador(request):
         return redirect('panel_trabajador')
 
     obras = Obra.objects.filter(activa=True)
+    # Asegúrate que la ruta del template sea correcta ('registration' o 'trabajador')
     return render(request, 'trabajador/panel.html', {
         'asistencia_activa': asistencia_activa,
         'obras': obras
@@ -154,3 +156,44 @@ def dashboard_jefe_obra(request):
         'fecha_hoy': hoy,
     }
     return render(request, 'registration/dashboard_jefe.html', context)
+
+# 4. CREAR REPORTE DE INCIDENTE (Nueva Funcionalidad)
+@login_required
+def crear_reporte(request):
+    try:
+        perfil = request.user.perfil
+        if perfil.rol != 'JEFE': return redirect('home')
+    except:
+        return redirect('admin:index')
+
+    # Buscamos la obra activa del jefe (o la seleccionada en la URL)
+    obra_id = request.GET.get('obra_id')
+    if obra_id:
+        obra_actual = get_object_or_404(Obra, id=obra_id, jefe_obra=perfil)
+    else:
+        # Por defecto tomamos la primera si no se seleccionó
+        obra_actual = Obra.objects.filter(jefe_obra=perfil, activa=True).first()
+
+    if not obra_actual:
+        messages.error(request, "No tienes una obra activa asignada para reportar incidentes.")
+        return redirect('dashboard_jefe')
+
+    if request.method == 'POST':
+        form = ReporteIncidenteForm(request.POST, request.FILES)
+        if form.is_valid():
+            reporte = form.save(commit=False)
+            reporte.obra = obra_actual      # Asignación automática
+            reporte.jefe_obra = perfil      # Asignación automática
+            reporte.save()                  # Guardamos primero para tener ID
+            
+            form.save_m2m()                 # Guardamos los trabajadores afectados (Many-to-Many)
+            
+            # Forzamos el cálculo de dinero perdido
+            reporte.calcular_impacto() 
+            
+            messages.success(request, "⚠ Incidente reportado. El impacto financiero se ha calculado.")
+            return redirect('dashboard_jefe')
+    else:
+        form = ReporteIncidenteForm()
+
+    return render(request, 'registration/crear_reporte.html', {'form': form, 'obra': obra_actual})
