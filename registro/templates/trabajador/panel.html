@@ -79,9 +79,10 @@
 
                     <p class="fw-bold mb-2">Evidencia de Término</p>
                     <div class="camera-trigger mb-3" onclick="document.getElementById('fotoInput').click()">
-                        <i class="bi bi-camera-fill text-danger display-4"></i>
+                        <i id="icono-estado" class="bi bi-camera-fill text-danger display-4"></i>
                         <p class="mb-0 mt-2 fw-bold text-muted" id="foto-text">Tocar para foto trasera</p>
                     </div>
+                    
                     <input type="file" name="foto" id="fotoInput" accept="image/*" capture="environment" onchange="fotoCapturada()">
 
                     <button type="submit" name="marcar_salida" class="btn btn-danger w-100 py-3 fw-bold rounded-pill shadow" id="btnAction" disabled>
@@ -101,7 +102,7 @@
                     <p class="fw-bold mb-2">Verificación Visual</p>
                     <div class="camera-trigger mb-4" onclick="document.getElementById('fotoInput').click()">
                         <div id="icon-container">
-                            <i class="bi bi-person-bounding-box text-success display-4"></i>
+                            <i id="icono-estado" class="bi bi-person-bounding-box text-success display-4"></i>
                         </div>
                         <p class="mb-0 mt-2 fw-bold text-muted" id="foto-text">Tocar para Selfie en vivo</p>
                     </div>
@@ -131,8 +132,17 @@
     let fotoLista = false;
 
     function validarTodo() {
+        // Solo habilitamos el botón si tenemos GPS Y Foto
         if (gpsListo && fotoLista) {
             btnAction.disabled = false;
+            
+            // Efecto visual en el botón
+            btnAction.classList.remove('btn-secondary');
+            if(btnAction.name === 'marcar_salida') {
+                btnAction.classList.add('btn-danger');
+            } else {
+                btnAction.classList.add('btn-success');
+            }
         }
     }
 
@@ -140,10 +150,22 @@
         const input = document.getElementById('fotoInput');
         if (input.files && input.files[0]) {
             fotoLista = true;
+            
+            // 1. Cambiar borde y fondo
             document.querySelector('.camera-trigger').classList.add('captured');
-            document.getElementById('foto-text').innerText = "Imagen cargada correctamente";
-            document.getElementById('foto-text').classList.add('text-success');
-            document.querySelector('.bi-person-bounding-box').classList.replace('bi-person-bounding-box', 'bi-check-circle-fill');
+            
+            // 2. Cambiar texto
+            const txt = document.getElementById('foto-text');
+            txt.innerText = "Imagen cargada correctamente";
+            txt.classList.add('text-success');
+            
+            // 3. SOLUCIÓN AL PROBLEMA: Cambiar el icono sin importar cual sea
+            const icono = document.getElementById('icono-estado');
+            if (icono) {
+                icono.className = 'bi bi-check-circle-fill text-success display-4';
+            }
+            
+            // 4. Intentar validar
             validarTodo();
         }
     }
@@ -157,8 +179,14 @@
 
         navigator.geolocation.getCurrentPosition(
             (pos) => {
-                document.getElementById('lat').value = pos.coords.latitude;
-                document.getElementById('lon').value = pos.coords.longitude;
+                // Llenar los inputs ocultos (funciona para entrada Y salida)
+                const latInput = document.getElementById('lat');
+                const lonInput = document.getElementById('lon');
+                
+                if(latInput && lonInput) {
+                    latInput.value = pos.coords.latitude;
+                    lonInput.value = pos.coords.longitude;
+                }
                 
                 // Análisis básico de precisión
                 const precision = pos.coords.accuracy;
@@ -176,6 +204,7 @@
             (err) => {
                 gpsBadge.innerText = "Error GPS";
                 gpsBadge.style.color = "red";
+                console.error(err);
                 alert("Debes permitir el acceso a tu ubicación para marcar asistencia.");
             },
             { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
