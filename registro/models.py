@@ -29,8 +29,9 @@ class Perfil(models.Model):
 class Obra(models.Model):
     nombre = models.CharField(max_length=100)
     direccion = models.CharField(max_length=255)
-    latitud = models.DecimalField(max_digits=9, decimal_places=6) 
-    longitud = models.DecimalField(max_digits=9, decimal_places=6)
+    latitud = models.DecimalField(max_digits=20, decimal_places=10) 
+    longitud = models.DecimalField(max_digits=20, decimal_places=10)
+    
     radio_permitido = models.IntegerField(default=50)
     
     presupuesto_total = models.DecimalField(max_digits=15, decimal_places=0)
@@ -85,14 +86,14 @@ class Asistencia(models.Model):
     
     
     hora_entrada = models.TimeField(auto_now_add=True)
-    latitud_entrada = models.DecimalField(max_digits=9, decimal_places=6)
-    longitud_entrada = models.DecimalField(max_digits=9, decimal_places=6)
+    latitud_entrada = models.DecimalField(max_digits=20, decimal_places=10, null=True, blank=True)
+    longitud_entrada = models.DecimalField(max_digits=20, decimal_places=10, null=True, blank=True)
     foto_entrada = models.ImageField(upload_to='asistencias/entrada/', blank=True, null=True)
     entrada_valida = models.BooleanField(default=False)
 
     hora_salida = models.TimeField(blank=True, null=True)
-    latitud_salida = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
-    longitud_salida = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+    latitud_salida = models.DecimalField(max_digits=20, decimal_places=10, null=True, blank=True)
+    longitud_salida = models.DecimalField(max_digits=20, decimal_places=10, null=True, blank=True)
     foto_salida = models.ImageField(upload_to='asistencias/salida/', blank=True, null=True)
     
     horas_trabajadas = models.DecimalField(max_digits=4, decimal_places=2, default=0)

@@ -1,0 +1,106 @@
+{% extends "admin/change_form.html" %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <style>
+        #mapa-selector {
+            height: 400px;
+            width: 100%;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border: 2px solid #ccc;
+            z-index: 1; 
+        }
+        .ubicacion-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .ubicacion-btn:hover { background: #218838; }
+    </style>
+{% endblock %}
+
+{% block after_field_sets %}
+    
+    <div style="padding: 10px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 10px;">
+        <h3 style="margin-top: 0;">📍 Selector de Ubicación</h3>
+        <p class="help">Arrastra el marcador azul o haz clic en el mapa para definir la ubicación de la obra.</p>
+        <button type="button" onclick="obtenerUbicacionActual()" class="ubicacion-btn">
+            🎯 Usar mi ubicación actual (GPS)
+        </button>
+        <div id="mapa-selector"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 1. Obtener los campos de Django (latitud y longitud)
+            const inputLat = document.getElementById('id_latitud');
+            const inputLon = document.getElementById('id_longitud');
+            
+            // Coordenadas por defecto (Centro de Chile aprox o Inacap Antofagasta)
+            let latInicial = inputLat.value || -23.6345129; // Inacap Antofagasta por defecto
+            let lonInicial = inputLon.value || -70.3940232;
+
+            // 2. Inicializar el Mapa
+            var map = L.map('mapa-selector').setView([latInicial, lonInicial], 15);
+
+            // Cargar capa de OpenStreetMap (el dibujo del mapa)
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            // 3. Poner el Marcador
+            var marker = L.marker([latInicial, lonInicial], {draggable: true}).addTo(map);
+
+            // Función para actualizar los inputs cuando el marcador se mueve
+            function actualizarInputs(lat, lng) {
+                inputLat.value = lat.toFixed(7); // 7 decimales de precisión
+                inputLon.value = lng.toFixed(7);
+            }
+
+            // Evento: Al terminar de arrastrar el marcador
+            marker.on('dragend', function(event) {
+                var position = marker.getLatLng();
+                actualizarInputs(position.lat, position.lng);
+            });
+
+            // Evento: Al hacer clic en cualquier parte del mapa
+            map.on('click', function(e) {
+                marker.setLatLng(e.latlng);
+                actualizarInputs(e.latlng.lat, e.latlng.lng);
+            });
+
+            // 4. Función Botón "Usar mi ubicación"
+            window.obtenerUbicacionActual = function() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(function(position) {
+                        var lat = position.coords.latitude;
+                        var lon = position.coords.longitude;
+                        
+                        // Mover mapa y marcador
+                        map.setView([lat, lon], 18);
+                        marker.setLatLng([lat, lon]);
+                        
+                        // Llenar inputs
+                        actualizarInputs(lat, lon);
+                        alert("¡Ubicación detectada con éxito!");
+                    }, function() {
+                        alert("No se pudo obtener tu ubicación. Verifica que el navegador tenga permisos.");
+                    });
+                } else {
+                    alert("Tu navegador no soporta geolocalización.");
+                }
+            };
+        });
+    </script>
+
+    {{ block.super }}
+{% endblock %}

@@ -16,7 +16,13 @@
         <div class="alert alert-warning mt-3">
             Si cambiaste de celular, pídele a tu Jefe que <strong>Resetee tu Dispositivo</strong>.
         </div>
-        <a href="{% url 'logout' %}" class="btn btn-outline-secondary w-100 mt-2">Cerrar Sesión</a>
-    </div>
+        
+        <form action="{% url 'logout' %}" method="post" class="mt-2 w-100">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-secondary w-100">
+                Cerrar Sesión
+            </button>
+        </form>
+        </div>
 </body>
 </html>
